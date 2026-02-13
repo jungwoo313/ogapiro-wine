@@ -1,0 +1,2338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오가피 와인 제조관리 시스템 v11.8</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 { font-size: 24px; margin-bottom: 5px; }
+        
+        .version-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        
+        .connection-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        
+        .status-online { background: #10b981; color: white; }
+        .status-offline { background: #ef4444; color: white; }
+        
+        .auto-save-indicator {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .auto-save-indicator.show { opacity: 1; }
+        
+        .tabs {
+            display: flex;
+            background: #f1f5f9;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.3s;
+            white-space: nowrap;
+            min-width: 120px;
+        }
+        
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .tab-content { display: none; padding: 30px; }
+        .tab-content.active { display: block; }
+        
+        .form-group { margin-bottom: 20px; }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #334155;
+            font-size: 14px;
+        }
+        
+        .input-with-button {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .input-with-button input { flex: 1; }
+        
+        .quick-btn {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            background: white;
+            color: #667eea;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .quick-btn:hover { background: #667eea; color: white; }
+        
+        .quick-select-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .quick-select-btn {
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+            color: #334155;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+        
+        .quick-select-btn:hover {
+            border-color: #667eea;
+            background: #f8fafc;
+            transform: translateY(-2px);
+        }
+        
+        .quick-select-btn.selected {
+            border-color: #667eea;
+            background: #f1f5f9;
+            color: #667eea;
+        }
+        
+        .price-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .price-btn {
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+            color: #334155;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .price-btn:hover {
+            border-color: #667eea;
+            background: #f8fafc;
+            transform: translateY(-2px);
+        }
+        
+        .price-btn.selected {
+            border-color: #10b981;
+            background: #10b981;
+            color: white;
+            box-shadow: 0 5px 15px rgba(16,185,129,0.3);
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102,126,234,0.3);
+        }
+        
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+            margin-left: 10px;
+        }
+        
+        .btn-secondary:hover { background: #475569; }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+            margin-left: 10px;
+        }
+        
+        .btn-success:hover { background: #059669; }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        
+        .btn-danger:hover { background: #dc2626; }
+        
+        .photo-upload {
+            border: 2px dashed #cbd5e1;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .photo-upload:hover {
+            border-color: #667eea;
+            background: #f8fafc;
+        }
+        
+        .photo-preview {
+            max-width: 200px;
+            max-height: 200px;
+            margin: 10px auto;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .photo-preview.show { display: block; }
+        
+        /* 색상/구역 그리드 50% 축소 */
+        .color-tapes {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .color-tape {
+            padding: 10px 8px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        
+        .color-tape:hover { transform: translateY(-2px); }
+        
+        .color-tape.selected {
+            border-color: #1e293b;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        .warehouse-zones {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .warehouse-zone {
+            padding: 10px 8px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            background: white;
+            transition: all 0.3s;
+        }
+        
+        .warehouse-zone:hover {
+            transform: translateY(-2px);
+            border-color: #667eea;
+        }
+        
+        .warehouse-zone.selected {
+            border-color: #667eea;
+            background: #f1f5f9;
+            box-shadow: 0 3px 10px rgba(102,126,234,0.2);
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 13px;
+        }
+        
+        tr:hover { background: #f8fafc; }
+        
+        .product-photo-small {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .manufacturing-list { margin-top: 30px; }
+        
+        .manufacturing-item {
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+        
+        .manufacturing-item:hover {
+            border-color: #667eea;
+            background: #f8fafc;
+            transform: translateX(5px);
+        }
+        
+        .item-photo {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        
+        .item-info {
+            flex: 1;
+            cursor: pointer;
+        }
+        
+        .item-info h4 {
+            margin-bottom: 5px;
+            color: #1e293b;
+        }
+        
+        .item-info p {
+            font-size: 12px;
+            color: #64748b;
+            margin: 2px 0;
+        }
+        
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 25px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .notification.success { border-left: 4px solid #10b981; }
+        .notification.error { border-left: 4px solid #ef4444; }
+        
+        .export-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(102,126,234,0.3);
+        }
+        
+        .summary-card h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .summary-card .value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .haccp-section { margin-bottom: 20px; }
+        
+        @media (max-width: 768px) {
+            .color-tapes,
+            .warehouse-zones {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .quick-select-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .price-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            table {
+                font-size: 11px;
+            }
+            
+            th, td {
+                padding: 8px;
+            }
+            
+            .export-section {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* 🔐 로그인 화면 스타일 */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .login-box h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .login-box p {
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+        
+        .login-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .login-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .login-error {
+            color: #ef4444;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .login-logo {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        
+        .login-footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+    </style>
+</head>
+<body>
+    
+    <!-- 🔐 로그인 화면 -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-box">
+            <div class="login-logo">🍷</div>
+            <h2>OGAPIRO WINE</h2>
+            <p>관리자 코드를 입력하세요</p>
+            
+            <input 
+                type="password" 
+                id="adminCode" 
+                class="login-input" 
+                placeholder="관리자 코드"
+                maxlength="20"
+                autocomplete="off"
+            >
+            
+            <button class="login-btn" onclick="checkAdminCode()">
+                🔓 로그인
+            </button>
+            
+            <div id="loginError" class="login-error">
+                ❌ 관리자 코드가 올바르지 않습니다
+            </div>
+            
+            <div class="login-footer">
+                재고관리 시스템 v11.25
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>🍷 오가피 와인 제조관리 시스템</h1>
+            <div class="version-badge">v11.25 Admin Code Login</div>
+            <div class="connection-status" id="connectionStatus">📡 연결 중...</div>
+            <div class="auto-save-indicator" id="autoSaveIndicator">💾 자동저장 중...</div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('manufacturing')">📋 제조관리대장</button>
+            <button class="tab" onclick="switchTab('inbound')">📥 입고등록</button>
+            <button class="tab" onclick="switchTab('outbound')">📤 출고등록</button>
+            <button class="tab" onclick="switchTab('inventory')">📊 재고현황</button>
+            <button class="tab" onclick="switchTab('haccp')">✅ HACCP점검표</button>
+        </div>
+        
+        <!-- 제조관리대장 탭 -->
+        <div id="manufacturing" class="tab-content active">
+            <h2>📋 제조관리대장</h2>
+            
+            <div class="form-group">
+                <label>제조번호 (원클릭 입력) *</label>
+                <div class="input-with-button">
+                    <input type="text" id="mfgNumber" placeholder="예: HE-OGP-260212-01" required>
+                    <button class="quick-btn" onclick="quickFillMfgNumber()">HE-OGP-260212-01</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>제조일자 *</label>
+                <input type="date" id="mfgDate" required>
+            </div>
+            
+            <div class="form-group">
+                <label>상품명 + 용량 (빠른 선택) *</label>
+                <input type="text" id="mfgProductName" placeholder="상품명 입력 또는 아래 버튼 클릭" required>
+                <div class="quick-select-buttons">
+                    <button class="quick-select-btn" onclick="quickSelectProduct('오가피로 프리미엄', '750ml')">🍷 오가피로 프리미엄 750ml</button>
+                    <button class="quick-select-btn" onclick="quickSelectProduct('오가피로 클래식', '500ml')">🍷 오가피로 클래식 500ml</button>
+                    <button class="quick-select-btn" onclick="quickSelectProduct('오가피로 스탠다드', '375ml')">🍷 오가피로 스탠다드 375ml</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>용량 *</label>
+                <input type="text" id="mfgVolume" placeholder="자동 입력됨" required>
+            </div>
+            
+            <div class="form-group">
+                <label>제품 사진 📸</label>
+                <div class="photo-upload" onclick="document.getElementById('mfgPhoto').click()">
+                    <p>📷 클릭하여 사진 업로드</p>
+                    <img id="mfgPhotoPreview" class="photo-preview" alt="사진 미리보기">
+                    <input type="file" id="mfgPhoto" accept="image/*" style="display:none;" onchange="handleMfgPhotoUpload(event)">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>생산수량(병) *</label>
+                <input type="number" id="mfgQuantity" placeholder="예: 100" required>
+            </div>
+            
+            <div class="form-group">
+                <label>원재료 배치번호</label>
+                <div class="input-with-button">
+                    <input type="text" id="mfgRawBatch" placeholder="예: OGP-260212-A">
+                    <button class="quick-btn" onclick="quickFillRawBatch()">OGP-260212-A</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>알코올(%)</label>
+                <input type="text" id="mfgAlcohol" placeholder="예: 13%">
+            </div>
+            
+            <div class="form-group">
+                <label>병입일</label>
+                <input type="date" id="mfgBottlingDate">
+            </div>
+            
+            <div class="form-group">
+                <label>소비기한</label>
+                <input type="date" id="mfgExpiryDate">
+            </div>
+            
+            <div class="form-group">
+                <label>비고</label>
+                <textarea id="mfgNote" placeholder="추가 정보 입력..."></textarea>
+            </div>
+            
+            <button class="btn btn-primary" onclick="saveManufacturing()">
+                <span id="mfgBtnText">📋 제조 등록</span>
+            </button>
+            <button class="btn btn-secondary" onclick="resetManufacturingForm()">🔄 초기화</button>
+            
+            <div class="manufacturing-list">
+                <h3>등록된 제조 리스트</h3>
+                <div id="manufacturingListContainer"></div>
+            </div>
+        </div>
+        
+        <!-- 입고등록 탭 -->
+        <div id="inbound" class="tab-content">
+            <h2>📥 입고등록</h2>
+            
+            <div class="form-group">
+                <label>상품 선택 *</label>
+                <select id="inboundProduct" onchange="loadProductPhoto()">
+                    <option value="">-- 제조된 상품 선택 --</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>제품 사진</label>
+                <img id="inboundPhotoPreview" class="photo-preview" alt="사진 미리보기">
+            </div>
+            
+            <div class="form-group">
+                <label>배치번호</label>
+                <div class="input-with-button">
+                    <input type="text" id="inboundBatch" placeholder="예: OGP-260212-A">
+                    <button class="quick-btn" onclick="quickFillBatchNumber()">OGP-260212-A</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>색상 테이프 선택 * (축소)</label>
+                <div class="color-tapes">
+                    <div class="color-tape" style="background: #3b82f6; color: white;" onclick="selectColor('파랑')">🔵</div>
+                    <div class="color-tape" style="background: #22c55e; color: white;" onclick="selectColor('초록')">🟢</div>
+                    <div class="color-tape" style="background: #eab308; color: white;" onclick="selectColor('노랑')">🟡</div>
+                    <div class="color-tape" style="background: #ef4444; color: white;" onclick="selectColor('빨강')">🔴</div>
+                    <div class="color-tape" style="background: #a855f7; color: white;" onclick="selectColor('보라')">🟣</div>
+                    <div class="color-tape" style="background: #f97316; color: white;" onclick="selectColor('주황')">🟠</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>창고 구역 선택 * (축소)</label>
+                <div class="warehouse-zones">
+                    <div class="warehouse-zone" onclick="selectZone('A구역')">A</div>
+                    <div class="warehouse-zone" onclick="selectZone('B구역')">B</div>
+                    <div class="warehouse-zone" onclick="selectZone('C구역')">C</div>
+                    <div class="warehouse-zone" onclick="selectZone('D구역')">D</div>
+                    <div class="warehouse-zone" onclick="selectZone('E구역')">E</div>
+                    <div class="warehouse-zone" onclick="selectZone('F구역')">F</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>수량(병) *</label>
+                <input type="number" id="inboundQuantity" placeholder="입고 수량 입력" required>
+            </div>
+            
+            <div class="form-group">
+                <label>비고 (신규)</label>
+                <textarea id="inboundNote" placeholder="추가 정보 입력..."></textarea>
+            </div>
+            
+            <button class="btn btn-primary" onclick="saveInbound()">📥 입고 등록</button>
+            <button class="btn btn-secondary" onclick="resetInboundForm()">🔄 초기화</button>
+            
+            <div class="manufacturing-list">
+                <h3>입고 이력</h3>
+                <div id="inboundListContainer"></div>
+            </div>
+        </div>
+        
+        <!-- 출고등록 탭 -->
+        <div id="outbound" class="tab-content">
+            <h2>📤 출고등록</h2>
+            
+            <div class="form-group">
+                <label>출고 배치 선택 *</label>
+                <select id="batchSelect" onchange="selectBatchFromDropdown()">
+                    <option value="">-- 재고가 있는 배치 선택 --</option>
+                </select>
+                <div id="selectedBatchInfo" style="margin-top: 10px; padding: 10px; background: #f1f5f9; border-radius: 8px; display: none;">
+                    <p style="font-size: 13px; color: #334155;"><strong>선택된 배치:</strong> <span id="selectedBatchName"></span></p>
+                    <p style="font-size: 12px; color: #64748b;">재고: <span id="selectedBatchStock"></span>병</p>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>출고수량(병) *</label>
+                <input type="number" id="outboundQuantity" placeholder="출고 수량 입력" oninput="calculateOutboundTotal()" required>
+            </div>
+            
+            <div class="form-group">
+                <label>출고 대상 이름 *</label>
+                <input type="text" id="outboundTarget" placeholder="예: 김고객" required>
+            </div>
+            
+            <div class="form-group">
+                <label>출고가(원/병) *</label>
+                <input type="number" id="outboundPrice" placeholder="출고가 입력 또는 아래 버튼 클릭" oninput="calculateOutboundTotal()" required>
+                <div class="price-buttons">
+                    <button class="price-btn" onclick="selectPrice(38000)">💰 38,000원</button>
+                    <button class="price-btn" onclick="selectPrice(25000)">💰 25,000원</button>
+                    <button class="price-btn" onclick="selectPrice(17000)">💰 17,000원</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>출고가 총액</label>
+                <input type="text" id="outboundTotal" readonly placeholder="0원">
+            </div>
+            
+            <div class="form-group">
+                <label>비고 (신규)</label>
+                <textarea id="outboundNote" placeholder="출고 관련 비고 입력..."></textarea>
+            </div>
+            
+            <button class="btn btn-primary" onclick="saveOutbound()">📤 출고 등록</button>
+            
+            <div class="manufacturing-list">
+                <h3>출고 이력</h3>
+                <div id="outboundListContainer"></div>
+            </div>
+        </div>
+        
+        <!-- 재고현황 탭 -->
+        <div id="inventory" class="tab-content">
+            <h2>📊 재고현황</h2>
+            
+            <div class="summary-cards">
+                <div class="summary-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                    <h3>📦 총 입고수량</h3>
+                    <div class="value" id="summaryInbound">0병</div>
+                </div>
+                <div class="summary-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <h3>✅ 현재 재고</h3>
+                    <div class="value" id="summaryStock">0병</div>
+                </div>
+                <div class="summary-card" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                    <h3>📤 총 출고수량</h3>
+                    <div class="value" id="summaryOutbound">0병</div>
+                </div>
+                <div class="summary-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                    <h3>💰 판매총액</h3>
+                    <div class="value" id="summarySales">0원</div>
+                </div>
+            </div>
+            
+            <div class="export-section">
+                <div>
+                    <h3 style="margin-bottom: 5px;">📋 전체 데이터 내보내기</h3>
+                    <p style="font-size: 13px; color: #64748b;">제조관리, 입고, 출고, 재고, HACCP 데이터를 Excel 파일로 저장</p>
+                </div>
+                <button class="btn btn-success" onclick="exportToExcel()">📊 엑셀로 내보내기</button>
+            </div>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>사진</th>
+                            <th>상품명</th>
+                            <th>제조번호</th>
+                            <th>배치번호</th>
+                            <th>입고수량</th>
+                            <th>현재고</th>
+                            <th>출고수량</th>
+                            <th>출고대상</th>
+                            <th>판매총액</th>
+                            <th>입고일</th>
+                            <th>색상/구역</th>
+                            <th>삭제</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryBody">
+                        <tr>
+                            <td colspan="12" style="text-align: center; padding: 30px;">재고 데이터가 없습니다</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- HACCP 점검표 탭 -->
+        <div id="haccp" class="tab-content">
+            <h2>✅ HACCP 점검표</h2>
+            
+            <div class="haccp-section">
+                <div class="form-group">
+                    <label>점검일 *</label>
+                    <input type="date" id="haccpDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>공정단계 *</label>
+                    <select id="haccpStage">
+                        <option value="발효공정">발효공정</option>
+                        <option value="숙성공정">숙성공정</option>
+                        <option value="여과공정">여과공정</option>
+                        <option value="병입공정">병입공정</option>
+                        <option value="포장공정">포장공정</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>점검항목 *</label>
+                    <select id="haccpItem">
+                        <option value="온도관리">온도관리</option>
+                        <option value="위생관리">위생관리</option>
+                        <option value="설비점검">설비점검</option>
+                        <option value="원료관리">원료관리</option>
+                        <option value="기록관리">기록관리</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>기준 * (빠른 입력)</label>
+                    <div class="input-with-button">
+                        <input type="text" id="haccpStandard" placeholder="예: 18~22°C 유지" required>
+                        <button class="quick-btn" onclick="quickFillHACCPStandard()">18~22°C 유지</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>점검결과 *</label>
+                    <select id="haccpResult">
+                        <option value="적합">✅ 적합</option>
+                        <option value="부적합">❌ 부적합</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>조치사항</label>
+                    <textarea id="haccpAction" placeholder="부적합 시 조치내용 입력..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>점검자 *</label>
+                    <input type="text" id="haccpInspector" placeholder="점검자 이름" required>
+                </div>
+                
+                <button class="btn btn-primary" onclick="saveHACCP()">
+                    <span id="haccpBtnText">✅ 점검 등록</span>
+                </button>
+                <button class="btn btn-secondary" onclick="resetHACCPForm()">🔄 초기화</button>
+            </div>
+            
+            <div class="manufacturing-list">
+                <h3>HACCP 점검 이력</h3>
+                <div id="haccpListContainer"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCuCpu2TAmCYjIceiyIKLHu1Nyav8DQde4",
+            authDomain: "ogapiro-wine.firebaseapp.com",
+            databaseURL: "https://ogapiro-wine-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ogapiro-wine",
+            storageBucket: "ogapiro-wine.firebasestorage.app",
+            messagingSenderId: "605743153867",
+            appId: "1:605743153867:web:d1ab2869dac0190e43114e",
+            measurementId: "G-3252DV3DNB"
+        };
+        
+        let isFirebaseEnabled = true;
+        let db = null;
+        
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+            isFirebaseEnabled = true;
+            updateConnectionStatus(true);
+            
+            // 🔥 실시간 리스너 비활성화 (삭제 충돌 방지)
+            // 데이터 로드는 window.onload에서 수행
+            // db.ref('manufacturing').on('value', () => { loadManufacturingList(); updateInboundProductSelect(); });
+            // db.ref('batches').on('value', () => { updateBatchList(); updateInboundList(); updateInventory(); });
+            // db.ref('transactions').on('value', () => { updateOutboundList(); updateInventory(); });
+            // db.ref('haccp').on('value', () => { updateHACCPList(); });
+        } catch (error) {
+            isFirebaseEnabled = false;
+            updateConnectionStatus(false);
+        }
+        
+        let manufacturingData = {};
+        let batches = {};
+        let transactions = [];
+        let haccpData = [];
+        let selectedColor = '';
+        let selectedZone = '';
+        let selectedBatchId = '';
+        let editingMfgId = null;
+        let editingHaccpId = null;
+        let currentMfgPhoto = null;
+        
+        function compressImage(file, maxSizeKB = 200) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        const maxDimension = 800;
+                        if (width > height && width > maxDimension) {
+                            height = (height / width) * maxDimension;
+                            width = maxDimension;
+                        } else if (height > maxDimension) {
+                            width = (width / height) * maxDimension;
+                            height = maxDimension;
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        let quality = 0.7;
+                        let compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                        
+                        while (compressedDataUrl.length > maxSizeKB * 1024 * 1.37 && quality > 0.1) {
+                            quality -= 0.1;
+                            compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                        }
+                        
+                        resolve(compressedDataUrl);
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // 🔥 Firebase Storage에 사진 업로드
+        async function uploadPhotoToStorage(file, path) {
+            try {
+                // 1. 파일명 생성 (타임스탬프 + 원본 확장자)
+                const timestamp = Date.now();
+                const ext = file.name.split('.').pop();
+                const fileName = `${path}_${timestamp}.${ext}`;
+                
+                // 2. Storage 경로: photos/제조/파일명, photos/입고/파일명 등
+                const storageRef = storage.ref(`photos/${path}/${fileName}`);
+                
+                // 3. 업로드 (메타데이터 포함)
+                const metadata = {
+                    contentType: file.type,
+                    customMetadata: {
+                        'uploadedAt': new Date().toISOString()
+                    }
+                };
+                
+                showNotification('📤 사진 업로드 중...', 'info');
+                const snapshot = await storageRef.put(file, metadata);
+                
+                // 4. 다운로드 URL 가져오기
+                const downloadURL = await snapshot.ref.getDownloadURL();
+                
+                showNotification('✅ 사진 업로드 완료!', 'success');
+                return downloadURL;
+                
+            } catch (error) {
+                console.error('사진 업로드 실패:', error);
+                showNotification('⚠️ 사진 업로드 실패! Base64로 저장합니다.', 'warning');
+                
+                // 업로드 실패 시 Base64로 폴백
+                return await compressImage(file, 200);
+            }
+        }
+        
+        function quickFillMfgNumber() {
+            const today = new Date();
+            const yy = String(today.getFullYear()).slice(-2);
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            
+            const todayMfgs = Object.values(manufacturingData).filter(m => 
+                m.mfgNumber && m.mfgNumber.includes(`${yy}${mm}${dd}`)
+            );
+            const serial = String(todayMfgs.length + 1).padStart(2, '0');
+            
+            document.getElementById('mfgNumber').value = `HE-OGP-${yy}${mm}${dd}-${serial}`;
+            showNotification('✅ 제조번호 자동 입력!', 'success');
+        }
+        
+        function quickFillRawBatch() {
+            const today = new Date();
+            const yy = String(today.getFullYear()).slice(-2);
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            
+            document.getElementById('mfgRawBatch').value = `OGP-${yy}${mm}${dd}-A`;
+            showNotification('✅ 원재료 배치번호 자동 입력!', 'success');
+        }
+        
+        function quickSelectProduct(productName, volume) {
+            document.getElementById('mfgProductName').value = productName;
+            document.getElementById('mfgVolume').value = volume;
+            
+            document.querySelectorAll('.quick-select-btn').forEach(btn => btn.classList.remove('selected'));
+            event.target.classList.add('selected');
+            
+            showNotification(`✅ ${productName} (${volume}) 선택!`, 'success');
+        }
+        
+        function quickFillBatchNumber() {
+            const today = new Date();
+            const yy = String(today.getFullYear()).slice(-2);
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            
+            const todayBatches = Object.values(batches).filter(b => 
+                b.batchNumber && b.batchNumber.includes(`${yy}${mm}${dd}`)
+            );
+            const suffix = String.fromCharCode(65 + todayBatches.length);
+            
+            document.getElementById('inboundBatch').value = `OGP-${yy}${mm}${dd}-${suffix}`;
+            showNotification('✅ 배치번호 자동 입력!', 'success');
+        }
+        
+        function quickFillHACCPStandard() {
+            document.getElementById('haccpStandard').value = '18~22°C 유지';
+            showNotification('✅ HACCP 기준 자동 입력!', 'success');
+        }
+        
+        function selectPrice(price) {
+            document.getElementById('outboundPrice').value = price;
+            
+            document.querySelectorAll('.price-btn').forEach(btn => btn.classList.remove('selected'));
+            event.target.classList.add('selected');
+            
+            calculateOutboundTotal();
+            showNotification(`✅ 출고가 ${price.toLocaleString()}원 선택!`, 'success');
+        }
+        
+        function updateConnectionStatus(online) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (online) {
+                statusEl.textContent = '🌐 온라인';
+                statusEl.className = 'connection-status status-online';
+            } else {
+                statusEl.textContent = '📡 오프라인';
+                statusEl.className = 'connection-status status-offline';
+            }
+        }
+        
+        function showAutoSave() {
+            const indicator = document.getElementById('autoSaveIndicator');
+            indicator.classList.add('show');
+            setTimeout(() => indicator.classList.remove('show'), 2000);
+        }
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'inbound') {
+                updateInboundProductSelect();
+                updateInboundList();
+            } else if (tabName === 'outbound') {
+                updateBatchList();
+                updateOutboundList();
+            } else if (tabName === 'inventory') {
+                updateInventory();
+            } else if (tabName === 'haccp') {
+                updateHACCPList();
+            }
+        }
+        
+        async function handleMfgPhotoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                try {
+                    showNotification('📸 사진 압축 중...', 'success');
+                    currentMfgPhoto = await compressImage(file, 200);
+                    
+                    const preview = document.getElementById('mfgPhotoPreview');
+                    preview.src = currentMfgPhoto;
+                    preview.classList.add('show');
+                    
+                    showNotification('✅ 사진 준비 완료!', 'success');
+                } catch (error) {
+                    showNotification('❌ 사진 처리 실패', 'error');
+                }
+            }
+        }
+        
+        async function saveManufacturing() {
+            const mfgNumber = document.getElementById('mfgNumber').value.trim();
+            const mfgDate = document.getElementById('mfgDate').value;
+            const productName = document.getElementById('mfgProductName').value.trim();
+            const volume = document.getElementById('mfgVolume').value.trim();
+            const quantity = document.getElementById('mfgQuantity').value;
+            
+            if (!mfgNumber || !mfgDate || !productName || !volume || !quantity) {
+                showNotification('⚠️ 필수 항목을 모두 입력하세요!', 'error');
+                return;
+            }
+            
+            const mfgId = editingMfgId || ('MFG' + Date.now());
+            
+            const data = {
+                id: mfgId,
+                mfgNumber: mfgNumber,
+                date: mfgDate,
+                productName: productName,
+                volume: volume,
+                quantity: parseInt(quantity),
+                rawBatch: document.getElementById('mfgRawBatch').value,
+                alcohol: document.getElementById('mfgAlcohol').value,
+                bottlingDate: document.getElementById('mfgBottlingDate').value,
+                expiryDate: document.getElementById('mfgExpiryDate').value,
+                note: document.getElementById('mfgNote').value,
+                photo: currentMfgPhoto || '',
+                createdAt: editingMfgId ? manufacturingData[editingMfgId].createdAt : Date.now(),
+                updatedAt: Date.now()
+            };
+            
+            if (isFirebaseEnabled) {
+                await db.ref('manufacturing/' + mfgId).set(data);
+                showAutoSave();
+            } else {
+                manufacturingData[mfgId] = data;
+                localStorage.setItem('manufacturingData', JSON.stringify(manufacturingData));
+            }
+            
+            showNotification(`✅ ${editingMfgId ? '수정' : '등록'} 완료!`, 'success');
+            resetManufacturingForm();
+            
+            // 🔥 전역 변수 강제 리로드
+            if (isFirebaseEnabled) {
+                const snapshot = await db.ref('manufacturing').once('value');
+                manufacturingData = snapshot.val() || {};
+            }
+            
+            loadManufacturingList();
+            updateInboundProductSelect();
+        }
+        
+        async function loadManufacturingList() {
+            if (isFirebaseEnabled) {
+                const snapshot = await db.ref('manufacturing').once('value');
+                manufacturingData = snapshot.val() || {};
+            } else {
+                manufacturingData = JSON.parse(localStorage.getItem('manufacturingData') || '{}');
+            }
+            
+            const container = document.getElementById('manufacturingListContainer');
+            container.innerHTML = '';
+            
+            if (Object.keys(manufacturingData).length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #64748b;">등록된 제조 데이터가 없습니다</p>';
+                return;
+            }
+            
+            const sortedItems = Object.values(manufacturingData).sort((a, b) => b.createdAt - a.createdAt);
+            
+            sortedItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'manufacturing-item';
+                
+                const dateTime = new Date(item.createdAt).toLocaleString('ko-KR');
+                
+                div.innerHTML = `
+                    ${item.photo ? `<img src="${item.photo}" class="item-photo" alt="사진">` : '<div class="item-photo" style="background: #e2e8f0; display: flex; align-items: center; justify-content: center;">📷</div>'}
+                    <div class="item-info" onclick="loadManufacturingForEdit('${item.id}')">
+                        <h4>${item.mfgNumber}: ${item.productName} (${item.volume})</h4>
+                        <p>제조일: ${item.date} | 생산: ${item.quantity}병</p>
+                        <p>${item.alcohol ? '알코올: ' + item.alcohol : ''} ${item.rawBatch ? '| 원재료: ' + item.rawBatch : ''}</p>
+                        <p style="color: #94a3b8;">등록: ${dateTime}</p>
+                    </div>
+                    <button class="btn btn-danger delete-btn" onclick="deleteManufacturing('${item.id}', this)">🗑️</button>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+        
+        async function deleteManufacturing(mfgId, element) {
+            if (window.event) {
+                window.event.stopPropagation();
+            }
+            
+            if (!confirm('정말 이 제조 항목을 삭제하시겠습니까?')) return;
+            
+            if (isFirebaseEnabled) {
+                await db.ref('manufacturing/' + mfgId).remove();
+                showAutoSave();
+            } else {
+                delete manufacturingData[mfgId];
+                localStorage.setItem('manufacturingData', JSON.stringify(manufacturingData));
+            }
+            
+            showNotification('✅ 삭제 완료!', 'success');
+            
+            // 🔥 전역 변수 강제 리로드
+            if (isFirebaseEnabled) {
+                const snapshot = await db.ref('manufacturing').once('value');
+                manufacturingData = snapshot.val() || {};
+            }
+            
+            loadManufacturingList();
+            updateInboundProductSelect();
+        }
+        
+        function loadManufacturingForEdit(mfgId) {
+            const data = manufacturingData[mfgId];
+            if (!data) return;
+            
+            editingMfgId = mfgId;
+            
+            document.getElementById('mfgNumber').value = data.mfgNumber;
+            document.getElementById('mfgDate').value = data.date;
+            document.getElementById('mfgProductName').value = data.productName;
+            document.getElementById('mfgVolume').value = data.volume;
+            document.getElementById('mfgQuantity').value = data.quantity;
+            document.getElementById('mfgRawBatch').value = data.rawBatch || '';
+            document.getElementById('mfgAlcohol').value = data.alcohol || '';
+            document.getElementById('mfgBottlingDate').value = data.bottlingDate || '';
+            document.getElementById('mfgExpiryDate').value = data.expiryDate || '';
+            document.getElementById('mfgNote').value = data.note || '';
+            
+            if (data.photo) {
+                currentMfgPhoto = data.photo;
+                const preview = document.getElementById('mfgPhotoPreview');
+                preview.src = data.photo;
+                preview.classList.add('show');
+            }
+            
+            document.getElementById('mfgBtnText').textContent = '✏️ 수정';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showNotification('✏️ 수정 모드', 'success');
+        }
+        
+        function resetManufacturingForm() {
+            editingMfgId = null;
+            currentMfgPhoto = null;
+            
+            document.getElementById('mfgNumber').value = '';
+            document.getElementById('mfgDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('mfgProductName').value = '';
+            document.getElementById('mfgVolume').value = '';
+            document.getElementById('mfgQuantity').value = '';
+            document.getElementById('mfgRawBatch').value = '';
+            document.getElementById('mfgAlcohol').value = '';
+            document.getElementById('mfgBottlingDate').value = '';
+            document.getElementById('mfgExpiryDate').value = '';
+            document.getElementById('mfgNote').value = '';
+            
+            const preview = document.getElementById('mfgPhotoPreview');
+            preview.src = '';
+            preview.classList.remove('show');
+            
+            document.getElementById('mfgBtnText').textContent = '📋 제조 등록';
+        }
+        
+        function updateInboundProductSelect() {
+            const select = document.getElementById('inboundProduct');
+            select.innerHTML = '<option value="">-- 제조된 상품 선택 --</option>';
+            
+            Object.values(manufacturingData).forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = `${item.productName} (${item.volume}) - ${item.mfgNumber}`;
+                select.appendChild(option);
+            });
+        }
+        
+        function loadProductPhoto() {
+            const mfgId = document.getElementById('inboundProduct').value;
+            const preview = document.getElementById('inboundPhotoPreview');
+            
+            if (mfgId && manufacturingData[mfgId] && manufacturingData[mfgId].photo) {
+                preview.src = manufacturingData[mfgId].photo;
+                preview.classList.add('show');
+            } else {
+                preview.src = '';
+                preview.classList.remove('show');
+            }
+        }
+        
+        function selectColor(color) {
+            document.querySelectorAll('.color-tape').forEach(el => el.classList.remove('selected'));
+            event.target.classList.add('selected');
+            selectedColor = color;
+        }
+        
+        function selectZone(zone) {
+            document.querySelectorAll('.warehouse-zone').forEach(el => el.classList.remove('selected'));
+            event.target.classList.add('selected');
+            selectedZone = zone;
+        }
+        
+        async function saveInbound() {
+            const mfgId = document.getElementById('inboundProduct').value;
+            const quantity = document.getElementById('inboundQuantity').value;
+            const note = document.getElementById('inboundNote').value;
+            const batchInput = document.getElementById('inboundBatch').value.trim();
+            
+            if (!mfgId || !selectedColor || !selectedZone || !quantity) {
+                showNotification('⚠️ 모든 필수 항목을 입력하세요!', 'error');
+                return;
+            }
+            
+            let batchNumber = batchInput;
+            if (!batchNumber) {
+                const today = new Date();
+                const yy = String(today.getFullYear()).slice(-2);
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                const dateStr = `${yy}${mm}${dd}`;
+                
+                const todayBatches = Object.values(batches).filter(b => 
+                    b.batchNumber && b.batchNumber.includes(dateStr)
+                );
+                const suffix = String.fromCharCode(65 + todayBatches.length);
+                batchNumber = `OGP-${dateStr}-${suffix}`;
+            }
+            
+            const mfgData = manufacturingData[mfgId];
+            const uniqueId = 'BATCH' + Date.now();
+            
+            const batchData = {
+                id: uniqueId,
+                batchNumber: batchNumber,
+                mfgId: mfgId,
+                mfgNumber: mfgData.mfgNumber,
+                productName: mfgData.productName,
+                volume: mfgData.volume,
+                photo: mfgData.photo || '',
+                color: selectedColor,
+                zone: selectedZone,
+                quantity: parseInt(quantity),
+                originalQuantity: parseInt(quantity),
+                note: note,
+                inboundDate: new Date().toISOString().split('T')[0],
+                createdAt: Date.now()
+            };
+            
+            if (isFirebaseEnabled) {
+                await db.ref('batches/' + uniqueId).set(batchData);
+                showAutoSave();
+            } else {
+                batches[uniqueId] = batchData;
+                localStorage.setItem('batches', JSON.stringify(batches));
+            }
+            
+            showNotification(`✅ ${mfgData.productName} ${quantity}병 입고 완료!`, 'success');
+            resetInboundForm();
+            
+            // 🔥 전역 변수 강제 리로드
+            if (isFirebaseEnabled) {
+                const batchSnapshot = await db.ref('batches').once('value');
+                batches = batchSnapshot.val() || {};
+            }
+            
+            updateInboundList();
+            updateBatchList();  // 출고 화면도 업데이트
+            updateInventory();  // 재고 화면도 업데이트
+        }
+        
+        async function updateInboundList() {
+            if (isFirebaseEnabled) {
+                const snapshot = await db.ref('batches').once('value');
+                batches = snapshot.val() || {};
+            } else {
+                batches = JSON.parse(localStorage.getItem('batches') || '{}');
+            }
+            
+            const container = document.getElementById('inboundListContainer');
+            container.innerHTML = '';
+            
+            const batchList = Object.values(batches);
+            
+            if (batchList.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #64748b;">입고 이력이 없습니다</p>';
+                return;
+            }
+            
+            const sortedBatches = batchList.sort((a, b) => b.createdAt - a.createdAt);
+            
+            sortedBatches.forEach(batch => {
+                const div = document.createElement('div');
+                div.className = 'manufacturing-item';
+                
+                const dateTime = new Date(batch.createdAt).toLocaleString('ko-KR');
+                
+                div.innerHTML = `
+                    ${batch.photo ? `<img src="${batch.photo}" class="item-photo" alt="사진">` : '<div class="item-photo" style="background: #e2e8f0; display: flex; align-items: center; justify-content: center;">📷</div>'}
+                    <div class="item-info" onclick="loadInboundForEdit('${batch.id}')">
+                        <h4>${batch.productName} (${batch.volume})</h4>
+                        <p>배치: ${batch.batchNumber} | 제조: ${batch.mfgNumber}</p>
+                        <p>입고: ${batch.originalQuantity}병 | 현재고: ${batch.quantity}병</p>
+                        <p>색상: ${batch.color} | 구역: ${batch.zone}</p>
+                        <p style="color: #94a3b8;">입고일: ${batch.inboundDate} | 등록: ${dateTime}</p>
+                        ${batch.note ? '<p style="color: #64748b;">비고: ' + batch.note + '</p>' : ''}
+                    </div>
+                    <button class="btn btn-danger delete-btn" onclick="deleteBatch('${batch.id}', this)">🗑️</button>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+        
+        async function deleteBatch(batchId, element) {
+            if (window.event) {
+                window.event.stopPropagation();
+            }
+            
+            if (!confirm('정말 이 입고 항목을 삭제하시겠습니까?\n관련 출고 이력도 함께 삭제됩니다.')) return;
+            
+            // 제조 삭제처럼 단순하게!
+            if (isFirebaseEnabled) {
+                await db.ref('batches/' + batchId).remove();
+                
+                const transSnapshot = await db.ref('transactions').once('value');
+                const transData = transSnapshot.val() || {};
+                for (let key in transData) {
+                    if (transData[key].batchId === batchId) {
+                        await db.ref('transactions/' + key).remove();
+                    }
+                }
+                showAutoSave();
+            } else {
+                delete batches[batchId];
+                localStorage.setItem('batches', JSON.stringify(batches));
+                
+                transactions = transactions.filter(t => t.batchId !== batchId);
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+            }
+            
+            showNotification('✅ 삭제 완료!', 'success');
+            
+            // 🔥 전역 변수 강제 리로드
+            if (isFirebaseEnabled) {
+                const batchSnapshot = await db.ref('batches').once('value');
+                batches = batchSnapshot.val() || {};
+                const transSnapshot = await db.ref('transactions').once('value');
+                transactions = Object.values(transSnapshot.val() || {});
+            }
+            
+            // 🔥 모든 업데이트 함수를 await로 기다림!
+            await updateInboundList();
+            await updateInventory();
+            await updateBatchList();
+            await updateOutboundList();
+        }
+        
+        function loadInboundForEdit(batchId) {
+            const batch = batches[batchId];
+            if (!batch) return;
+            
+            document.getElementById('inboundProduct').value = batch.mfgId;
+            loadProductPhoto();
+            document.getElementById('inboundBatch').value = batch.batchNumber;
+            document.getElementById('inboundQuantity').value = batch.originalQuantity;
+            document.getElementById('inboundNote').value = batch.note || '';
+            
+            selectedColor = batch.color;
+            document.querySelectorAll('.color-tape').forEach(el => {
+                if (el.textContent.includes(batch.color) || el.onclick.toString().includes(batch.color)) {
+                    el.classList.add('selected');
+                } else {
+                    el.classList.remove('selected');
+                }
+            });
+            
+            selectedZone = batch.zone;
+            document.querySelectorAll('.warehouse-zone').forEach(el => {
+                if (el.textContent.includes(batch.zone) || el.onclick.toString().includes(batch.zone)) {
+                    el.classList.add('selected');
+                } else {
+                    el.classList.remove('selected');
+                }
+            });
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showNotification('✅ 입고 데이터 로드!', 'success');
+        }
+        
+        function resetInboundForm() {
+            document.getElementById('inboundProduct').value = '';
+            document.getElementById('inboundQuantity').value = '';
+            document.getElementById('inboundNote').value = '';
+            document.getElementById('inboundBatch').value = '';
+            document.getElementById('inboundPhotoPreview').classList.remove('show');
+            selectedColor = '';
+            selectedZone = '';
+            document.querySelectorAll('.color-tape').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.warehouse-zone').forEach(el => el.classList.remove('selected'));
+        }
+        
+        async function updateBatchList() {
+            if (isFirebaseEnabled) {
+                const snapshot = await db.ref('batches').once('value');
+                batches = snapshot.val() || {};
+            } else {
+                batches = JSON.parse(localStorage.getItem('batches') || '{}');
+            }
+            
+            const select = document.getElementById('batchSelect');
+            select.innerHTML = '<option value="">-- 재고가 있는 배치 선택 --</option>';
+            
+            const availableBatches = Object.values(batches).filter(b => b.quantity > 0);
+            
+            availableBatches.forEach(batch => {
+                const option = document.createElement('option');
+                option.value = batch.id;
+                option.textContent = `${batch.batchNumber} | ${batch.productName} (${batch.volume}) | 재고: ${batch.quantity}병`;
+                select.appendChild(option);
+            });
+        }
+        
+        function selectBatchFromDropdown() {
+            const select = document.getElementById('batchSelect');
+            selectedBatchId = select.value;
+            
+            if (selectedBatchId) {
+                const batch = batches[selectedBatchId];
+                document.getElementById('selectedBatchInfo').style.display = 'block';
+                document.getElementById('selectedBatchName').textContent = `${batch.batchNumber} | ${batch.productName} (${batch.volume})`;
+                document.getElementById('selectedBatchStock').textContent = batch.quantity;
+            } else {
+                document.getElementById('selectedBatchInfo').style.display = 'none';
+            }
+        }
+        
+        function calculateOutboundTotal() {
+            const quantity = parseInt(document.getElementById('outboundQuantity').value) || 0;
+            const price = parseInt(document.getElementById('outboundPrice').value) || 0;
+            const total = quantity * price;
+            
+            document.getElementById('outboundTotal').value = total.toLocaleString() + '원';
+        }
+        
+        async function saveOutbound() {
+            if (!selectedBatchId) {
+                showNotification('⚠️ 배치를 선택하세요!', 'error');
+                return;
+            }
+            
+            const quantity = parseInt(document.getElementById('outboundQuantity').value);
+            const target = document.getElementById('outboundTarget').value.trim();
+            const price = parseInt(document.getElementById('outboundPrice').value);
+            const note = document.getElementById('outboundNote').value.trim();
+            
+            if (!quantity || !target || !price) {
+                showNotification('⚠️ 모든 필수 항목을 입력하세요!', 'error');
+                return;
+            }
+            
+            const batch = batches[selectedBatchId];
+            
+            if (quantity > batch.quantity) {
+                showNotification(`⚠️ 재고 부족! (현재 재고: ${batch.quantity}병)`, 'error');
+                return;
+            }
+            
+            const total = quantity * price;
+            
+            const transaction = {
+                id: 'OUT' + Date.now(),
+                batchId: selectedBatchId,
+                batchNumber: batch.batchNumber,
+                mfgId: batch.mfgId,
+                mfgNumber: batch.mfgNumber,
+                productName: batch.productName,
+                volume: batch.volume,
+                photo: batch.photo,
+                quantity: quantity,
+                target: target,
+                price: price,
+                total: total,
+                note: note,
+                color: batch.color,
+                zone: batch.zone,
+                outboundDate: new Date().toISOString().split('T')[0],
+                createdAt: Date.now()
+            };
+            
+            batch.quantity -= quantity;
+            
+            if (isFirebaseEnabled) {
+                await db.ref('batches/' + selectedBatchId).set(batch);
+                await db.ref('transactions/' + transaction.id).set(transaction);
+                showAutoSave();
+            } else {
+                batches[selectedBatchId] = batch;
+                transactions.push(transaction);
+                localStorage.setItem('batches', JSON.stringify(batches));
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+            }
+            
+            showNotification(`✅ ${quantity}병 출고 완료! (${total.toLocaleString()}원)`, 'success');
+            
+            document.getElementById('outboundQuantity').value = '';
+            document.getElementById('outboundTarget').value = '';
+            document.getElementById('outboundPrice').value = '';
+            document.getElementById('outboundTotal').value = '';
+            document.getElementById('outboundNote').value = '';
+            document.getElementById('batchSelect').value = '';
+            document.getElementById('selectedBatchInfo').style.display = 'none';
+            selectedBatchId = '';
+            
+            updateBatchList();
+            updateOutboundList();
+        }
+        
+        async function updateOutboundList() {
+            if (isFirebaseEnabled) {
+                const transSnapshot = await db.ref('transactions').once('value');
+                const transData = transSnapshot.val() || {};
+                transactions = Object.values(transData);
+            } else {
+                transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+            }
+            
+            const container = document.getElementById('outboundListContainer');
+            container.innerHTML = '';
+            
+            if (transactions.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #64748b;">출고 이력이 없습니다</p>';
+                return;
+            }
+            
+            const sortedTrans = transactions.sort((a, b) => b.createdAt - a.createdAt);
+            
+            sortedTrans.forEach(trans => {
+                const div = document.createElement('div');
+                div.className = 'manufacturing-item';
+                
+                const dateTime = new Date(trans.createdAt).toLocaleString('ko-KR');
+                
+                div.innerHTML = `
+                    ${trans.photo ? `<img src="${trans.photo}" class="item-photo" alt="사진">` : '<div class="item-photo" style="background: #e2e8f0; display: flex; align-items: center; justify-content: center;">📷</div>'}
+                    <div class="item-info">
+                        <h4>${trans.productName} (${trans.volume})</h4>
+                        <p>출고처: <strong>${trans.target}</strong> | 수량: ${trans.quantity}병 | 단가: ${trans.price.toLocaleString()}원</p>
+                        <p>총액: <strong>${trans.total.toLocaleString()}원</strong> | 배치: ${trans.batchNumber}</p>
+                        <p>제조: ${trans.mfgNumber} | 색상: ${trans.color} | 구역: ${trans.zone}</p>
+                        ${trans.note ? '<p style="color: #64748b;">비고: ' + trans.note + '</p>' : ''}
+                        <p style="color: #94a3b8;">출고일: ${trans.outboundDate} | 등록: ${dateTime}</p>
+                    </div>
+                    <button class="btn btn-danger delete-btn" onclick="deleteTransaction('${trans.id}', this)">🗑️</button>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+        
+        async function deleteTransaction(transId, element) {
+            if (window.event) {
+                window.event.stopPropagation();
+            }
+            
+            if (!confirm('정말 이 출고 항목을 삭제하시겠습니까?\n재고는 복구됩니다.')) return;
+            
+            const trans = transactions.find(t => t.id === transId);
+            if (!trans) return;
+            
+            const batch = batches[trans.batchId];
+            if (batch) {
+                batch.quantity += trans.quantity;
+            }
+            
+            if (isFirebaseEnabled) {
+                if (batch) await db.ref('batches/' + trans.batchId).set(batch);
+                await db.ref('transactions/' + transId).remove();
+                showAutoSave();
+            } else {
+                if (batch) {
+                    batches[trans.batchId] = batch;
+                    localStorage.setItem('batches', JSON.stringify(batches));
+                }
+                transactions = transactions.filter(t => t.id !== transId);
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+            }
+            
+            showNotification('✅ 삭제 완료! 재고 복구됨', 'success');
+            
+            // 🔥 전역 변수 강제 리로드
+            if (isFirebaseEnabled) {
+                const batchSnapshot = await db.ref('batches').once('value');
+                batches = batchSnapshot.val() || {};
+                const transSnapshot = await db.ref('transactions').once('value');
+                transactions = Object.values(transSnapshot.val() || {});
+            }
+            
+            updateOutboundList();
+            updateInventory();
+            updateBatchList();
+        }
+        
+        async function updateInventory() {
+            if (isFirebaseEnabled) {
+                const batchSnapshot = await db.ref('batches').once('value');
+                batches = batchSnapshot.val() || {};
+                
+                const transSnapshot = await db.ref('transactions').once('value');
+                const transData = transSnapshot.val() || {};
+                transactions = Object.values(transData);
+            } else {
+                batches = JSON.parse(localStorage.getItem('batches') || '{}');
+                transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+            }
+            
+            const batchList = Object.values(batches);
+            
+            let totalInbound = 0;
+            let totalStock = 0;
+            let totalOutbound = 0;
+            let totalSales = 0;
+            
+            batchList.forEach(batch => {
+                totalInbound += batch.originalQuantity;
+                totalStock += batch.quantity;
+            });
+            
+            transactions.forEach(trans => {
+                totalOutbound += trans.quantity;
+                totalSales += trans.total;
+            });
+            
+            document.getElementById('summaryInbound').textContent = totalInbound + '병';
+            document.getElementById('summaryStock').textContent = totalStock + '병';
+            document.getElementById('summaryOutbound').textContent = totalOutbound + '병';
+            document.getElementById('summarySales').textContent = totalSales.toLocaleString() + '원';
+            
+            const tbody = document.getElementById('inventoryBody');
+            tbody.innerHTML = '';
+            
+            if (batchList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12" style="text-align: center; padding: 30px;">재고 데이터가 없습니다</td></tr>';
+                return;
+            }
+            
+            const sortedBatches = batchList.sort((a, b) => b.createdAt - a.createdAt);
+            
+            sortedBatches.forEach(batch => {
+                const batchTransactions = transactions.filter(t => t.batchId === batch.id);
+                
+                const totalOut = batchTransactions.reduce((sum, t) => sum + t.quantity, 0);
+                const totalSales = batchTransactions.reduce((sum, t) => sum + t.total, 0);
+                const targets = batchTransactions.map(t => `${t.target}(${t.quantity}병)`).join(', ');
+                
+                const tr = document.createElement('tr');
+                
+                tr.innerHTML = `
+                    <td>${batch.photo ? `<img src="${batch.photo}" class="product-photo-small" alt="사진">` : '📷'}</td>
+                    <td>${batch.productName} (${batch.volume})</td>
+                    <td>${batch.mfgNumber}</td>
+                    <td>${batch.batchNumber}</td>
+                    <td><strong>${batch.originalQuantity}병</strong></td>
+                    <td><strong style="color: #10b981;">${batch.quantity}병</strong></td>
+                    <td><strong style="color: #ef4444;">${totalOut}병</strong></td>
+                    <td style="font-size: 12px;">${targets || '-'}</td>
+                    <td><strong style="color: #667eea;">${totalSales.toLocaleString()}원</strong></td>
+                    <td>${batch.inboundDate}</td>
+                    <td>${batch.color} / ${batch.zone}</td>
+                    <td><button class="btn btn-danger" onclick="deleteBatchFromInventory('${batch.id}', this)">🗑️</button></td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+        
+        async function deleteBatchFromInventory(batchId, element) {
+            if (window.event) {
+                window.event.stopPropagation();
+            }
+            
+            if (!confirm('정말 이 재고 항목을 삭제하시겠습니까?\n관련 출고 이력도 함께 삭제됩니다.')) return;
+            
+            // 출고 삭제처럼 단순하게!
+            if (isFirebaseEnabled) {
+                await db.ref('batches/' + batchId).remove();
+                
+                const transSnapshot = await db.ref('transactions').once('value');
+                const transData = transSnapshot.val() || {};
+                for (let key in transData) {
+                    if (transData[key].batchId === batchId) {
+                        await db.ref('transactions/' + key).remove();
+                    }
+                }
+                showAutoSave();
+            } else {
+                delete batches[batchId];
+                localStorage.setItem('batches', JSON.stringify(batches));
+                
+                transactions = transactions.filter(t => t.batchId !== batchId);
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+            }
+            
+            showNotification('✅ 삭제 완료!', 'success');
+            
+            // 🔥 전역 변수 강제 리로드
+            if (isFirebaseEnabled) {
+                const batchSnapshot = await db.ref('batches').once('value');
+                batches = batchSnapshot.val() || {};
+                const transSnapshot = await db.ref('transactions').once('value');
+                transactions = Object.values(transSnapshot.val() || {});
+            }
+            
+            // 🔥 모든 업데이트 함수를 await로 기다림!
+            await updateInboundList();
+            await updateOutboundList();
+            await updateInventory();
+            await updateBatchList();
+        }
+        
+        async function saveHACCP() {
+            const date = document.getElementById('haccpDate').value;
+            const stage = document.getElementById('haccpStage').value;
+            const item = document.getElementById('haccpItem').value;
+            const standard = document.getElementById('haccpStandard').value;
+            const result = document.getElementById('haccpResult').value;
+            const action = document.getElementById('haccpAction').value;
+            const inspector = document.getElementById('haccpInspector').value;
+            
+            if (!date || !standard || !inspector) {
+                showNotification('⚠️ 필수 항목을 모두 입력하세요!', 'error');
+                return;
+            }
+            
+            const haccpId = editingHaccpId || ('HACCP' + Date.now());
+            
+            const data = {
+                id: haccpId,
+                date: date,
+                stage: stage,
+                item: item,
+                standard: standard,
+                result: result,
+                action: action,
+                inspector: inspector,
+                createdAt: editingHaccpId ? haccpData.find(h => h.id === haccpId).createdAt : Date.now(),
+                updatedAt: Date.now()
+            };
+            
+            if (isFirebaseEnabled) {
+                await db.ref('haccp/' + haccpId).set(data);
+                showAutoSave();
+            } else {
+                if (editingHaccpId) {
+                    haccpData = haccpData.map(h => h.id === haccpId ? data : h);
+                } else {
+                    haccpData.push(data);
+                }
+                localStorage.setItem('haccpData', JSON.stringify(haccpData));
+            }
+            
+            showNotification(`✅ HACCP ${editingHaccpId ? '수정' : '등록'} 완료!`, 'success');
+            resetHACCPForm();
+            updateHACCPList();
+        }
+        
+        async function updateHACCPList() {
+            if (isFirebaseEnabled) {
+                const snapshot = await db.ref('haccp').once('value');
+                const data = snapshot.val() || {};
+                haccpData = Object.values(data);
+            } else {
+                haccpData = JSON.parse(localStorage.getItem('haccpData') || '[]');
+            }
+            
+            const container = document.getElementById('haccpListContainer');
+            container.innerHTML = '';
+            
+            if (haccpData.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #64748b;">HACCP 점검 이력이 없습니다</p>';
+                return;
+            }
+            
+            const sortedData = haccpData.sort((a, b) => b.createdAt - a.createdAt);
+            
+            sortedData.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'manufacturing-item';
+                
+                const dateTime = new Date(item.createdAt).toLocaleString('ko-KR');
+                const resultIcon = item.result === '적합' ? '✅' : '❌';
+                const resultColor = item.result === '적합' ? '#10b981' : '#ef4444';
+                
+                div.innerHTML = `
+                    <div style="width: 60px; height: 60px; background: ${resultColor}; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                        ${resultIcon}
+                    </div>
+                    <div class="item-info" onclick="loadHACCPForEdit('${item.id}')">
+                        <h4>${item.date} | ${item.stage} - ${item.item}</h4>
+                        <p>기준: ${item.standard}</p>
+                        <p>결과: <strong style="color: ${resultColor};">${item.result}</strong> | 점검자: ${item.inspector}</p>
+                        ${item.action ? '<p style="color: #64748b;">조치: ' + item.action + '</p>' : ''}
+                        <p style="color: #94a3b8;">등록: ${dateTime}</p>
+                    </div>
+                    <button class="btn btn-danger delete-btn" onclick="deleteHACCP('${item.id}', this)">🗑️</button>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+        
+        function loadHACCPForEdit(haccpId) {
+            const data = haccpData.find(h => h.id === haccpId);
+            if (!data) return;
+            
+            editingHaccpId = haccpId;
+            
+            document.getElementById('haccpDate').value = data.date;
+            document.getElementById('haccpStage').value = data.stage;
+            document.getElementById('haccpItem').value = data.item;
+            document.getElementById('haccpStandard').value = data.standard;
+            document.getElementById('haccpResult').value = data.result;
+            document.getElementById('haccpAction').value = data.action || '';
+            document.getElementById('haccpInspector').value = data.inspector;
+            
+            document.getElementById('haccpBtnText').textContent = '✏️ 수정 저장';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showNotification('✏️ 수정 모드', 'success');
+        }
+        
+        async function deleteHACCP(haccpId, element) {
+            if (window.event) {
+                window.event.stopPropagation();
+            }
+            
+            if (!confirm('정말 이 HACCP 점검 항목을 삭제하시겠습니까?')) return;
+            
+            if (isFirebaseEnabled) {
+                await db.ref('haccp/' + haccpId).remove();
+                showAutoSave();
+            } else {
+                haccpData = haccpData.filter(h => h.id !== haccpId);
+                localStorage.setItem('haccpData', JSON.stringify(haccpData));
+            }
+            
+            showNotification('✅ 삭제 완료!', 'success');
+            updateHACCPList();
+        }
+        
+        function resetHACCPForm() {
+            editingHaccpId = null;
+            document.getElementById('haccpDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('haccpStage').value = '발효공정';
+            document.getElementById('haccpItem').value = '온도관리';
+            document.getElementById('haccpStandard').value = '';
+            document.getElementById('haccpResult').value = '적합';
+            document.getElementById('haccpAction').value = '';
+            document.getElementById('haccpInspector').value = '';
+            document.getElementById('haccpBtnText').textContent = '✅ 점검 등록';
+        }
+        
+        async function exportToExcel() {
+            try {
+                if (isFirebaseEnabled) {
+                    const mfgSnapshot = await db.ref('manufacturing').once('value');
+                    manufacturingData = mfgSnapshot.val() || {};
+                    
+                    const batchSnapshot = await db.ref('batches').once('value');
+                    batches = batchSnapshot.val() || {};
+                    
+                    const transSnapshot = await db.ref('transactions').once('value');
+                    const transData = transSnapshot.val() || {};
+                    transactions = Object.values(transData);
+                    
+                    const haccpSnapshot = await db.ref('haccp').once('value');
+                    const haccpDataObj = haccpSnapshot.val() || {};
+                    haccpData = Object.values(haccpDataObj);
+                } else {
+                    manufacturingData = JSON.parse(localStorage.getItem('manufacturingData') || '{}');
+                    batches = JSON.parse(localStorage.getItem('batches') || '{}');
+                    transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+                    haccpData = JSON.parse(localStorage.getItem('haccpData') || '[]');
+                }
+                
+                const wb = XLSX.utils.book_new();
+                
+                const mfgData = Object.values(manufacturingData).map(item => ({
+                    '제조번호': item.mfgNumber,
+                    '제조일자': item.date,
+                    '상품명': item.productName,
+                    '용량': item.volume,
+                    '생산수량': item.quantity,
+                    '원재료배치': item.rawBatch || '',
+                    '알코올': item.alcohol || '',
+                    '병입일': item.bottlingDate || '',
+                    '소비기한': item.expiryDate || '',
+                    '비고': item.note || '',
+                    '등록일시': new Date(item.createdAt).toLocaleString('ko-KR')
+                }));
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mfgData), '제조관리대장');
+                
+                const batchData = Object.values(batches).map(item => ({
+                    '배치번호': item.batchNumber,
+                    '제조번호': item.mfgNumber,
+                    '상품명': item.productName,
+                    '용량': item.volume,
+                    '색상': item.color,
+                    '구역': item.zone,
+                    '입고수량': item.originalQuantity,
+                    '현재고': item.quantity,
+                    '입고일': item.inboundDate,
+                    '비고': item.note || '',
+                    '등록일시': new Date(item.createdAt).toLocaleString('ko-KR')
+                }));
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(batchData), '입고내역');
+                
+                const transData = transactions.map(item => ({
+                    '출고일': item.outboundDate,
+                    '배치번호': item.batchNumber,
+                    '제조번호': item.mfgNumber,
+                    '상품명': item.productName,
+                    '용량': item.volume,
+                    '출고수량': item.quantity,
+                    '출고처': item.target,
+                    '출고가': item.price,
+                    '총액': item.total,
+                    '비고': item.note || '',
+                    '색상': item.color,
+                    '구역': item.zone,
+                    '등록일시': new Date(item.createdAt).toLocaleString('ko-KR')
+                }));
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(transData), '출고내역');
+                
+                const inventoryData = Object.values(batches).map(batch => {
+                    const batchTrans = transactions.filter(t => t.batchId === batch.id);
+                    const totalOut = batchTrans.reduce((sum, t) => sum + t.quantity, 0);
+                    const totalSales = batchTrans.reduce((sum, t) => sum + t.total, 0);
+                    const targets = batchTrans.map(t => t.target).join(', ');
+                    
+                    return {
+                        '상품명': batch.productName,
+                        '용량': batch.volume,
+                        '제조번호': batch.mfgNumber,
+                        '배치번호': batch.batchNumber,
+                        '입고수량': batch.originalQuantity,
+                        '현재고': batch.quantity,
+                        '출고수량': totalOut,
+                        '출고대상': targets || '-',
+                        '판매총액': totalSales,
+                        '입고일': batch.inboundDate,
+                        '색상': batch.color,
+                        '구역': batch.zone
+                    };
+                });
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(inventoryData), '재고현황');
+                
+                const haccpExcelData = haccpData.map(item => ({
+                    '점검일': item.date,
+                    '공정단계': item.stage,
+                    '점검항목': item.item,
+                    '기준': item.standard,
+                    '점검결과': item.result,
+                    '조치사항': item.action || '',
+                    '점검자': item.inspector,
+                    '등록일시': new Date(item.createdAt).toLocaleString('ko-KR')
+                }));
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(haccpExcelData), 'HACCP점검표');
+                
+                const today = new Date();
+                const dateStr = today.toISOString().split('T')[0];
+                const fileName = `오가피와인_제조관리_${dateStr}.xlsx`;
+                
+                XLSX.writeFile(wb, fileName);
+                
+                showNotification(`✅ 엑셀 저장 완료! (${fileName})`, 'success');
+            } catch (error) {
+                showNotification('❌ 엑셀 저장 실패', 'error');
+            }
+        }
+        
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+
+        
+        // 🔐 관리자 코드 설정
+        const ADMIN_CODE = "ogapiro2025";  // ← 원하는 코드로 변경 가능
+        const LOGIN_DURATION = 30;  // 로그인 유지 일수
+        
+        // 엔터키로 로그인
+        document.addEventListener('DOMContentLoaded', function() {
+            const adminInput = document.getElementById('adminCode');
+            if (adminInput) {
+                adminInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        checkAdminCode();
+                    }
+                });
+                adminInput.focus();  // 자동 포커스
+            }
+        });
+        
+        // 로그인 확인
+        function checkAdminCode() {
+            const input = document.getElementById('adminCode');
+            const code = input.value.trim();
+            const errorMsg = document.getElementById('loginError');
+            
+            if (code === ADMIN_CODE) {
+                // 로그인 성공!
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + LOGIN_DURATION);
+                
+                localStorage.setItem('adminLoginExpiry', expiryDate.getTime());
+                
+                // 로그인 화면 숨기기
+                document.getElementById('loginOverlay').style.display = 'none';
+                
+                showNotification('✅ 로그인 성공!', 'success');
+                
+            } else {
+                // 로그인 실패
+                errorMsg.style.display = 'block';
+                input.value = '';
+                input.focus();
+                
+                // 3초 후 에러 메시지 숨기기
+                setTimeout(() => {
+                    errorMsg.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        // 로그인 상태 확인
+        function checkLoginStatus() {
+            const expiry = localStorage.getItem('adminLoginExpiry');
+            
+            if (expiry && new Date().getTime() < parseInt(expiry)) {
+                // 로그인 유효함
+                document.getElementById('loginOverlay').style.display = 'none';
+                return true;
+            } else {
+                // 로그인 필요
+                localStorage.removeItem('adminLoginExpiry');
+                document.getElementById('loginOverlay').style.display = 'flex';
+                return false;
+            }
+        }
+        
+        // 로그아웃 함수 (필요시 사용)
+        function logout() {
+            localStorage.removeItem('adminLoginExpiry');
+            location.reload();
+        }
+        
+        // 페이지 로드 시 로그인 확인
+        checkLoginStatus();
+
+        window.onload = function() {
+            // 🔥 예전 프로젝트 데이터 완전 삭제!
+            localStorage.clear();
+            console.log("✅ 로컬스토리지 초기화 완료!");
+            
+            loadManufacturingList();
+            updateInboundProductSelect();
+            updateInboundList();
+            updateOutboundList();
+            updateInventory();
+            updateHACCPList();
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('mfgDate').value = today;
+            document.getElementById('haccpDate').value = today;
+        };
+    </script>
+</body>
+</html>
