@@ -1,2 +1,0 @@
-# ogapiro-wine
-ogapi wine
